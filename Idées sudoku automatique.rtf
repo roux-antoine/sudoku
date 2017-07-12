@@ -1,0 +1,25 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf820
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 structure de donn\'e9es : une matrice avec des chiffres uniques ou un z\'e9ro pour la vraie grille\
+une matrice avec les vrais chiffres et aussi les chiffres possibles en plus\
+cr\'e9er des objets ligne, colonne, bloc, triplets ??\
+\
+la premi\'e8re est juste une matrice n * n\
+la deuxi\'e8me est une matrice 3d : n * n * nbr de possibilit\'e9s \
+\
+Recherche des trucs \'e9vidents (la r\'e9vision) : \
+au d\'e9but pas la peine de faire de la recherche au sein d\'92une unique ligne, colonne, bloc\
+Pour chaque 1..9 : il faut rechercher si il y a d\'e9j\'e0 deux repr\'e9sentants dans le triplet. Si c\'92est le cas, il faut d\'e9terminer quelle est la ligne restante, voir si deux cases sont d\'e9j\'e0 prises. Si c\'92est le cas on a trouv\'e9, sinon il faut garder en m\'e9moire les 2 ou 3 positions possibles et tester avec le triplet perpendiculaire (mais toujours dans la m\'eame fonction ce serait bien)\
+\
+\
+Recherche des possibles : \
+il faut d\'e9j\'e0 choisir quelle case on teste : \
+- le mieux serait de faire celle qui a le plus de voisins, mais c\'92est long de calculer les voisins de toutes\
+- on pourrait avoir une matrice avec le nombre de voisins de chacune des cases, ce ne serait pas si long de la mettre \'e0 jour \'e0 chaque fois, d\'92autant plus qu\'92on aurait en plus \'e0 le faire que quand un nouveau chiffre est trouv\'e9 \
+\
+ensuite c\'92est pas tr\'e8s compliqu\'e9, il suffit de parcourir tous les voisins}
