@@ -4,6 +4,9 @@ import numpy as np
 import random
 import copy
 
+## REMARQUES
+#les indices x et y sont parfois inversés à cause de la convention mathématique (y puis x)
+
 class Grid (object) :
 
     def __init__ (self, grid) :
@@ -138,7 +141,7 @@ class Grid (object) :
                             myGrid.grid[lineToStudy, 3*blockToStudy+1] = i
                         else :
                             myGrid.grid[lineToStudy, 3*blockToStudy+2] = i
-                        print("modified : ", i)
+                        #print("modified : ", i)
                 #il reste encore à gérer le cas où les deux autres tuiles ont encore plusieurs possibilités mais qu'on peut quand même conclure
 
 class Block (object) :
@@ -218,19 +221,41 @@ class Tile (object) :
         self.xIndex = xIndex
         self.yIndex = yIndex
 
-    def checkSurroundings(self) :
-        pass
+    def getNeighbors(self) :
+        """ checks the neighbors of the tile,
+            returns a list of the neighbors without duplicates
+        """
+        allNeighbors = []
+        allNeighbors.append(myGrid.getBlock(self.yIndex//3, self.xIndex//3).block.flatten())
+        allNeighbors.append(myGrid.getLine(self.xIndex).line)
+        allNeighbors.append(myGrid.getColumn(self.yIndex).column)
+        allNeighborsFlat = np.array(allNeighbors).flatten()
+        allNeighborsNoDuplicates = list(set(allNeighborsFlat))
+        allNeighborsNoDuplicates.remove(0)
+        return(allNeighborsNoDuplicates)
+
+    def evaluate(self) :
+        """ gets the neighbors using getNeighbors
+            checks if there is only one missing, in that case we modify the tiles
+            doesn't return anything
+        """
+        if (self.value == 0) :
+            neighbors = np.array(self.getNeighbors())
+            if (len(neighbors) == 8) :
+                for k in range(1,9) :
+                    if k not in neighbors :
+                        myGrid.grid[self.xIndex, self.yIndex] = k
 
 
 ###########################################
 
-TEST_GRID = np.zeros((9,9))
-compteur = 0
-for k in range (9) :
-    for i in range(9) :
-        TEST_GRID[i, k] = compteur
-        compteur += 1
-        #TEST_GRID[k, i] = random.randint(0,9)
+# TEST_GRID = np.zeros((9,9))
+# compteur = 0
+# for k in range (9) :
+#     for i in range(9) :
+#         TEST_GRID[i, k] = compteur
+#         compteur += 1
+
 
 # TEST_GRID = np.array([[  0,  4,  7,  27,  36,  45,  54,  63,  72.],
 #                       [  1,  5,  8,  28,  37,  46,  55,  64,  73.],
@@ -253,12 +278,24 @@ TEST_GRID = np.array([[  0,  0,  0,  4,  0,  0,  8,  7,  0.],
                       [  0,  0,  3,  2,  4,  0,  1,  6,  0.],
                       [  0,  1,  2,  0,  0,  0,  0,  9,  0.]])
 
-print(TEST_GRID)
+#print(TEST_GRID)
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 
-#print(myGrid.getBlock(3))
-#print(myGrid.getTile(0,7))
-#print(myGrid.getBlock(1,0).block)
-myGrid.searchForTwoOutOfThree()
-print(myGrid.grid - TEST_GRID)
+#myGrid.searchForTwoOutOfThree()
+#print(myGrid.grid - TEST_GRID)
+
+
+
+for k in range (9) :
+    for i in range (9) :
+        myGrid.searchForTwoOutOfThree()
+        someTile = myGrid.getTile(i,k)
+        someTile.evaluate()
+for k in range (9) :
+    for i in range (9) :
+        myGrid.searchForTwoOutOfThree()
+        someTile = myGrid.getTile(i,k)
+        someTile.evaluate()
+print(myGrid.grid)
+#print(myGrid.grid - TEST_GRID)
