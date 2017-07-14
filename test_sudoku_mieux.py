@@ -6,18 +6,26 @@ import copy
 
 ## REMARQUES
 #les indices x et y sont parfois inversés à cause de la convention mathématique (y puis x)
+#pour enlever les 0 au debut et fin : np.trim_zeros
+# il faut encore changer dans 2outOf3 : enlever les possibilités pour les voisins
+# il faut changer xIndex et yIndex en hIndex et vIndex
+
 
 class Grid (object) :
 
     def __init__ (self, grid) :
+        """ tempGrid corresponds to the grid where the little numbers are written
+            Because of python, the third dimension is of length 9 all the time
+        """
         self.grid = grid
+        someGrid = np.zeros((9,9,9))
+        for k in range (9) :
+            for i in range (9) :
+                someGrid[k,i,0] = grid[k,i]
+        self.tempGrid = someGrid
+        #self.tempGrid = grid[:,:,np.newaxis] #to make it a 3D array and not 2D
 
-    #def getBlock (self, myIndex) :
-        #index1 = 0 + 3 * (myIndex // 3)
-        #index2 = 3 + 3 * (myIndex // 3)
-        #index3 = 0 + 3 * (myIndex % 3)
-        #index4 = 3 + 3 * (myIndex % 3)
-        #return Block(self.grid[index1:index2, index3:index4], myIndex)
+
     def __str__ (self) :
         string = ""
         string += " -----------------------" + "\n"
@@ -32,6 +40,26 @@ class Grid (object) :
                 string += "|-----------------------|" + "\n"
         string += " -----------------------" + "\n"
         return string
+
+    def verify(self) :
+        """ verifies that finished grid is correct
+            by checking that all sums of blocks, lines and columns equal 45
+            returns : True if grid is correct, False otherwise
+        """
+        for k in range (9) :
+            currentColumn = myGrid.getColumn(k)
+            if (np.sum(currentColumn.column) != 45) :
+                return False
+            currentLine = myGrid.getLine(k)
+            if (np.sum(currentLine.line) != 45) :
+                return False
+
+        for k in range (3) :
+            for i in range (3) :
+                currentBlock = myGrid.getBlock(k,i)
+                if (np.sum(currentBlock.block) != 45) :
+                    return False
+        return True
 
     def getBlock (self, xIndex, yIndex) :
         index1 = 3 * yIndex
@@ -48,6 +76,9 @@ class Grid (object) :
 
     def getTile (self, xIndex, yIndex) :
         return Tile(self.grid[xIndex, yIndex], xIndex, yIndex)
+
+    def getTempTile (self, xIndex, yIndex) :
+        return Tile(self.tempGrid[xIndex, yIndex], xIndex, yIndex)
 
     def searchForTwoOutOfThree (self) :
         """
@@ -99,12 +130,15 @@ class Grid (object) :
                     if (np.count_nonzero(tilesStudied) == 2) :
                         indicesNotZero = np.array(np.nonzero(tilesStudied))
                         if (0 not in indicesNotZero) :
-                            myGrid.grid[3*blockToStudy,columnToStudy] = i
+                            tileToModify = myGrid.getTile(3*blockToStudy,columnToStudy)
+                            #myGrid.grid[3*blockToStudy,columnToStudy] = i
                         elif (1 not in indicesNotZero) :
-                            myGrid.grid[3*blockToStudy+1,columnToStudy] = i
+                            tileToModify = myGrid.getTile(3*blockToStudy+1,columnToStudy)
+                            #myGrid.grid[3*blockToStudy+1,columnToStudy] = i
                         else :
-                            myGrid.grid[3*blockToStudy+2,columnToStudy] = i
-                        #print("modified : ", i)
+                            tileToModify = myGrid.getTile(3*blockToStudy+2,columnToStudy)
+                            #myGrid.grid[3*blockToStudy+2,columnToStudy] = i
+                        tileToModify.modifyValue(tileToModify.xIndex, tileToModify.yIndex, i)
                 #il reste encore à gérer le cas où les deux autres tuiles ont encore plusieurs possibilités mais qu'on peut quand même conclure
 
         #horizontally
@@ -150,13 +184,17 @@ class Grid (object) :
                     if (np.count_nonzero(tilesStudied) == 2) :
                         indicesNotZero = np.array(np.nonzero(tilesStudied))
                         if (0 not in indicesNotZero) :
-                            myGrid.grid[lineToStudy, 3*blockToStudy] = i
+                            tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy)
+                            #myGrid.grid[lineToStudy, 3*blockToStudy] = i
                         elif (1 not in indicesNotZero) :
-                            myGrid.grid[lineToStudy, 3*blockToStudy+1] = i
+                            tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+1)
+                            #myGrid.grid[lineToStudy, 3*blockToStudy+1] = i
                         else :
-                            myGrid.grid[lineToStudy, 3*blockToStudy+2] = i
-                        #print("modified : ", i)
+                            tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
+                            #myGrid.grid[lineToStudy, 3*blockToStudy+2] = i
+                        tileToModify.modifyValue(tileToModify.xIndex, tileToModify.yIndex, i)
                 #il reste encore à gérer le cas où les deux autres tuiles ont encore plusieurs possibilités mais qu'on peut quand même conclure
+
 
 class Block (object) :
 
@@ -251,25 +289,73 @@ class Tile (object) :
     def evaluate(self) :
         """ gets the neighbors using getNeighbors
             checks if there is only one missing, in that case we modify the tiles
-            doesn't return anything
+            doesn't return anything, except -1 if tile is not 0
         """
-        if (self.value == 0) :
-            neighbors = np.array(self.getNeighbors())
-            if (len(neighbors) == 8) :
-                for k in range(1,9) :
-                    if k not in neighbors :
-                        myGrid.grid[self.xIndex, self.yIndex] = k
+        if (self.value != 0) :
+            return -1
+
+        #we first check if there is only one possibility in the tempGrid
+        possibilitiesNonZero = np.trim_zeros(myGrid.tempGrid[self.xIndex, self.yIndex])
+        if (len(possibilitiesNonZero) == 1) :
+            self.modifyValue(self.xIndex, self.yIndex, myGrid.tempGrid[self.xIndex, self.yIndex, 0])
+
+        #we now compute the neighbors as usual
+        neighbors = np.array(self.getNeighbors())
+
+        if (len(neighbors) == 8) :
+            for k in range(1,10) :
+                if k not in neighbors :
+                    #we modify the value of the tile
+                    self.modifyValue(self.xIndex, self.yIndex, k)
+
+        else :
+            for k in range(1,10) :
+                if (k not in neighbors) and (k not in myGrid.tempGrid[self.xIndex, self.yIndex]) :
+                    someArray = np.delete(myGrid.tempGrid[self.xIndex, self.yIndex], 8)
+                    myGrid.tempGrid[self.xIndex, self.yIndex] = np.append(k, someArray)
+
+
+    def modifyValue (self, xIndex, yIndex, value) :
+        """ Once we found the value of a tile, we modify it
+            We also modify the possible values of all of the neighbors of the tile
+        """
+        #we modify the value of the tile
+        myGrid.grid[self.xIndex, self.yIndex] = value
+        myGrid.tempGrid[self.xIndex, self.yIndex, 0] = value
+        myGrid.tempGrid[self.xIndex, self.yIndex, 1:9] = 0
+
+        #we modify the possible values of the neighbors : block
+        xIndexBlock = self.yIndex//3
+        yIndexBlock = self.xIndex//3
+        for k in range (3) :
+            for i in range (3) :
+                possibleTileValuesList = list(myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i])
+                if (value in possibleTileValuesList) :
+                    #in that case we have to remove "value" from the possibilities
+                    possibleTileValuesList.remove(value)
+                    possibleTileValuesList.append(0)
+                    myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i] = np.array(possibleTileValuesList)
+
+        #we modify the possible values of the neighbors : line
+        for k in range (9) :
+            possibleTileValuesList = list(myGrid.tempGrid[xIndex, k])
+            if (value in possibleTileValuesList) :
+                #in that case we have to remove "value" from the possibilities
+                possibleTileValuesList.remove(value)
+                possibleTileValuesList.append(0)
+                myGrid.tempGrid[xIndex, k] = np.array(possibleTileValuesList)
+
+        #we modify the possible values of the neighbors : column
+        # for k in range (9) :
+            possibleTileValuesList = list(myGrid.tempGrid[k, yIndex])
+            if (value in possibleTileValuesList) :
+                #in that case we have to remove "value" from the possibilities
+                possibleTileValuesList.remove(value)
+                possibleTileValuesList.append(0)
+                myGrid.tempGrid[k, yIndex] = np.array(possibleTileValuesList)
 
 
 ###########################################
-
-# TEST_GRID = np.zeros((9,9))
-# compteur = 0
-# for k in range (9) :
-#     for i in range(9) :
-#         TEST_GRID[i, k] = compteur
-#         compteur += 1
-
 
 # TEST_GRID = np.array([[  0,  4,  7,  27,  36,  45,  54,  63,  72.],
 #                       [  1,  5,  8,  28,  37,  46,  55,  64,  73.],
@@ -281,44 +367,48 @@ class Tile (object) :
 #                       [  7,  2,  5,  34,  43,  52,  61,  70,  79.],
 #                       [  8,  3,  9,  35,  44,  53,  62,  71,  80.]])
 
+TEST_GRID_1 = np.array([[  0,  0,  0,  4,  0,  0,  8,  7,  0.],
+                        [  0,  4,  7,  0,  9,  2,  0,  5,  0.],
+                        [  2,  0,  0,  6,  0,  0,  0,  3,  0.],
+                        [  9,  7,  0,  5,  0,  0,  2,  0,  3.],
+                        [  5,  0,  8,  0,  2,  4,  7,  0,  6.],
+                        [  6,  0,  4,  0,  0,  7,  0,  8,  5.],
+                        [  0,  9,  0,  3,  0,  8,  0,  0,  7.],
+                        [  0,  0,  3,  2,  4,  0,  1,  6,  0.],
+                        [  0,  1,  2,  0,  0,  0,  0,  9,  0.]])
 
-TEST_GRID = np.array([[  0,  0,  0,  4,  0,  0,  8,  7,  0.],
-                      [  0,  4,  7,  0,  9,  2,  0,  5,  0.],
-                      [  2,  0,  0,  6,  0,  0,  0,  3,  0.],
-                      [  9,  7,  0,  5,  0,  0,  2,  0,  3.],
-                      [  5,  0,  8,  0,  2,  4,  7,  0,  6.],
-                      [  6,  0,  4,  0,  0,  7,  0,  8,  5.],
-                      [  0,  9,  0,  3,  0,  8,  0,  0,  7.],
-                      [  0,  0,  3,  2,  4,  0,  1,  6,  0.],
-                      [  0,  1,  2,  0,  0,  0,  0,  9,  0.]])
+TEST_GRID_2 = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0.],
+                        [  8,  0,  1,  0,  0,  0,  9,  0,  3.],
+                        [  0,  0,  0,  6,  0,  3,  0,  0,  0.],
+                        [  0,  2,  0,  0,  5,  7,  4,  0,  6.],
+                        [  5,  0,  0,  4,  0,  6,  0,  0,  2.],
+                        [  7,  0,  4,  8,  3,  0,  0,  9,  0.],
+                        [  0,  0,  0,  5,  0,  1,  0,  0,  0.],
+                        [  0,  0,  8,  0,  0,  0,  7,  0,  1.],
+                        [  4,  0,  0,  0,  7,  0,  6,  3,  0.]])
 
+TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
+                        [  0,  0,  3,  0,  0,  0,  0,  0,  0.],
+                        [  0,  7,  0,  6,  9,  0,  2,  0,  0.],
+                        [  0,  5,  0,  0,  0,  7,  0,  0,  0.],
+                        [  0,  0,  0,  0,  4,  5,  7,  0,  0.],
+                        [  0,  0,  0,  1,  0,  0,  0,  9,  0.],
+                        [  0,  0,  1,  0,  0,  0,  0,  0,  8.],
+                        [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
+                        [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
 
-# TEST_GRID = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0.],
-#                       [  8,  0,  1,  0,  0,  0,  9,  0,  3.],
-#                       [  0,  0,  0,  6,  0,  3,  0,  0,  0.],
-#                       [  0,  2,  0,  0,  5,  7,  4,  0,  6.],
-#                       [  5,  0,  0,  4,  0,  6,  0,  0,  2.],
-#                       [  7,  0,  4,  8,  3,  0,  0,  9,  0.],
-#                       [  0,  0,  0,  5,  0,  1,  0,  0,  0.],
-#                       [  0,  0,  8,  0,  0,  0,  7,  0,  1.],
-#                       [  4,  0,  0,  0,  7,  0,  6,  3,  0.]])
-
+TEST_GRID = TEST_GRID_3
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 
+compteur = 0
+while (myGrid.verify() != True and compteur<5) :
+    compteur+=1
+    for k in range (9) :
+        for i in range (9) :
+            myGrid.searchForTwoOutOfThree()
+            someTile = myGrid.getTile(i,k)
+            someTile.evaluate()
 
-
-
-for k in range (9) :
-    for i in range (9) :
-        myGrid.searchForTwoOutOfThree()
-        someTile = myGrid.getTile(i,k)
-        someTile.evaluate()
-for k in range (9) :
-    for i in range (9) :
-        myGrid.searchForTwoOutOfThree()
-        someTile = myGrid.getTile(i,k)
-        someTile.evaluate()
-
-print(myGrid)
 #print(Grid(myGrid.grid - TEST_GRID))
+print(myGrid)
