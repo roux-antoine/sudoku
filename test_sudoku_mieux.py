@@ -18,6 +18,20 @@ class Grid (object) :
         #index3 = 0 + 3 * (myIndex % 3)
         #index4 = 3 + 3 * (myIndex % 3)
         #return Block(self.grid[index1:index2, index3:index4], myIndex)
+    def __str__ (self) :
+        string = ""
+        string += " -----------------------" + "\n"
+        for k in range (9) :
+            for i in range (9) :
+                if (i==0) or (i == 3) or (i == 6):
+                    string += "|" + " "
+                string += str(int(self.grid[k,i])) + " "
+            string += "|"
+            string += "\n"
+            if (k == 2) or (k==5) :
+                string += "|-----------------------|" + "\n"
+        string += " -----------------------" + "\n"
+        return string
 
     def getBlock (self, xIndex, yIndex) :
         index1 = 3 * yIndex
@@ -278,12 +292,20 @@ TEST_GRID = np.array([[  0,  0,  0,  4,  0,  0,  8,  7,  0.],
                       [  0,  0,  3,  2,  4,  0,  1,  6,  0.],
                       [  0,  1,  2,  0,  0,  0,  0,  9,  0.]])
 
-#print(TEST_GRID)
+
+# TEST_GRID = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0.],
+#                       [  8,  0,  1,  0,  0,  0,  9,  0,  3.],
+#                       [  0,  0,  0,  6,  0,  3,  0,  0,  0.],
+#                       [  0,  2,  0,  0,  5,  7,  4,  0,  6.],
+#                       [  5,  0,  0,  4,  0,  6,  0,  0,  2.],
+#                       [  7,  0,  4,  8,  3,  0,  0,  9,  0.],
+#                       [  0,  0,  0,  5,  0,  1,  0,  0,  0.],
+#                       [  0,  0,  8,  0,  0,  0,  7,  0,  1.],
+#                       [  4,  0,  0,  0,  7,  0,  6,  3,  0.]])
+
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 
-#myGrid.searchForTwoOutOfThree()
-#print(myGrid.grid - TEST_GRID)
 
 
 
@@ -297,5 +319,6 @@ for k in range (9) :
         myGrid.searchForTwoOutOfThree()
         someTile = myGrid.getTile(i,k)
         someTile.evaluate()
-print(myGrid.grid)
-#print(myGrid.grid - TEST_GRID)
+
+print(myGrid)
+#print(Grid(myGrid.grid - TEST_GRID))
