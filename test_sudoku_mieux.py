@@ -281,15 +281,17 @@ class Tile (object) :
         """ gets the neighbors using getNeighbors
             if there is only one missing, in that case we modify the tiles
             if there are multiples choices, we put them in the tempGrid
-            doesn't return anything, except -1 if tile is not 0
+            Returns : -1 if tile is not 0, True if tile has been modified
         """
         if (self.value != 0) :
             return -1
 
         #we first check if there is only one possibility in the tempGrid
         possibilitiesNonZero = np.trim_zeros(myGrid.tempGrid[self.xIndex, self.yIndex])
+
         if (len(possibilitiesNonZero) == 1) :
             self.modifyValue(self.xIndex, self.yIndex, myGrid.tempGrid[self.xIndex, self.yIndex, 0])
+            return True
 
         #we now compute the neighbors as usual
         neighbors = np.array(self.getNeighbors())
@@ -299,6 +301,7 @@ class Tile (object) :
                 if k not in neighbors :
                     #we modify the value of the tile
                     self.modifyValue(self.xIndex, self.yIndex, k)
+                    return True
 
         else :
             for k in range(1,10) :
@@ -306,10 +309,12 @@ class Tile (object) :
                     someArray = np.delete(myGrid.tempGrid[self.xIndex, self.yIndex], 8)
                     myGrid.tempGrid[self.xIndex, self.yIndex] = np.append(k, someArray)
 
+
     def modifyValue (self, xIndex, yIndex, value) :
         """ Once we found the value of a tile, we modify it
             We also modify the possible values of all of the neighbors of the tile
         """
+
         #we modify the value of the tile
         myGrid.grid[self.xIndex, self.yIndex] = value
         myGrid.tempGrid[self.xIndex, self.yIndex, 0] = value
@@ -318,28 +323,39 @@ class Tile (object) :
         #we modify the possible values of the neighbors : block
         xIndexBlock = self.yIndex//3
         yIndexBlock = self.xIndex//3
+        # for k in range (3) :
+        #     for i in range (3) :
+        #         possibleTileValuesList = list(myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i])
+        #         currentTile = myGrid.getTile(3*xIndexBlock+k, 3*yIndexBlock+i)
+        #         if (value in possibleTileValuesList) and (currentTile.value == 0) :
+        #             #in that case we have to remove "value" from the possibilities
+        #             possibleTileValuesList.remove(value)
+        #             possibleTileValuesList.append(0)
+        #             myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i] = np.array(possibleTileValuesList)
         for k in range (3) :
             for i in range (3) :
-                possibleTileValuesList = list(myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i])
-                if (value in possibleTileValuesList) :
+                possibleTileValuesList = list(myGrid.tempGrid[3*yIndexBlock+i, 3*xIndexBlock+k])
+                currentTile = myGrid.getTile(3*yIndexBlock+i, 3*xIndexBlock+k)
+                if (value in possibleTileValuesList) and (currentTile.value == 0) :
                     #in that case we have to remove "value" from the possibilities
                     possibleTileValuesList.remove(value)
                     possibleTileValuesList.append(0)
-                    myGrid.tempGrid[3*xIndexBlock+k, 3*yIndexBlock+i] = np.array(possibleTileValuesList)
-
+                    myGrid.tempGrid[3*yIndexBlock+i, 3*xIndexBlock+k] = np.array(possibleTileValuesList)
         #we modify the possible values of the neighbors : line
         for k in range (9) :
             possibleTileValuesList = list(myGrid.tempGrid[xIndex, k])
-            if (value in possibleTileValuesList) :
+            currentTile = myGrid.getTile(xIndex, k)
+            if (value in possibleTileValuesList) and (currentTile.value == 0) :
                 #in that case we have to remove "value" from the possibilities
                 possibleTileValuesList.remove(value)
                 possibleTileValuesList.append(0)
                 myGrid.tempGrid[xIndex, k] = np.array(possibleTileValuesList)
 
         #we modify the possible values of the neighbors : column
-        # for k in range (9) :
+        for k in range (9) :
             possibleTileValuesList = list(myGrid.tempGrid[k, yIndex])
-            if (value in possibleTileValuesList) :
+            currentTile = myGrid.getTile(k, yIndex)
+            if (value in possibleTileValuesList) and (currentTile.value == 0):
                 #in that case we have to remove "value" from the possibilities
                 possibleTileValuesList.remove(value)
                 possibleTileValuesList.append(0)
@@ -347,7 +363,7 @@ class Tile (object) :
 
     def narrowPossibilities(self) :
         """ Once ALL tiles have been evaluated, we can check if the possibilities for one number are only for one tile
-            doesn't return anything, except -1 if the tile is already known
+            Doesn't return anything, except -1 if the tile is already known
         """
 
         if (self.value != 0) :
@@ -424,16 +440,6 @@ class Tile (object) :
 
 ###########################################
 
-# TEST_GRID = np.array([[  0,  4,  7,  27,  36,  45,  54,  63,  72.],
-#                       [  1,  5,  8,  28,  37,  46,  55,  64,  73.],
-#                       [  2,  6,  3,  29,  38,  47,  56,  65,  74.],
-#                       [  3,  9,  1,  30,  39,  48,  57,  66,  75.],
-#                       [  4,  8,  1,  31,  40,  49,  58,  67,  76.],
-#                       [  5,  7,  2,  32,  41,  50,  59,  68,  77.],
-#                       [  6,  1,  4,  33,  42,  51,  60,  69,  78.],
-#                       [  7,  2,  5,  34,  43,  52,  61,  70,  79.],
-#                       [  8,  3,  9,  35,  44,  53,  62,  71,  80.]])
-
 TEST_GRID_1 = np.array([[  0,  0,  0,  4,  0,  0,  8,  7,  0.],
                         [  0,  4,  7,  0,  9,  2,  0,  5,  0.],
                         [  2,  0,  0,  6,  0,  0,  0,  3,  0.],
@@ -454,7 +460,17 @@ TEST_GRID_2 = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0.],
                         [  0,  0,  8,  0,  0,  0,  7,  0,  1.],
                         [  4,  0,  0,  0,  7,  0,  6,  3,  0.]])
 
-TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
+TEST_GRID_3 = np.array([[  0,  0,  2,  0,  0,  0,  0,  0,  0],
+                        [  0,  0,  3,  0,  1,  0,  0,  0,  6],
+                        [  0,  4,  0,  0,  2,  0,  0,  3,  0],
+                        [  1,  0,  0,  0,  0,  3,  0,  0,  9],
+                        [  0,  0,  5,  0,  0,  0,  4,  0,  0],
+                        [  2,  0,  0,  6,  0,  0,  0,  0,  8],
+                        [  0,  9,  0,  0,  7,  0,  0,  4,  0],
+                        [  7,  0,  0,  0,  8,  0,  5,  0,  0],
+                        [  0,  0,  0,  0,  0,  0,  3,  0,  0]])
+
+TEST_GRID_4 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  3,  0,  0,  0,  0,  0,  0.],
                         [  0,  7,  0,  6,  9,  0,  2,  0,  0.],
                         [  0,  5,  0,  0,  0,  7,  0,  0,  0.],
@@ -464,24 +480,23 @@ TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
                         [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
 
-TEST_GRID = TEST_GRID_2
+TEST_GRID = TEST_GRID_3
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
+print(Grid(TEST_GRID))
 
 compteur = 0
-while (myGrid.verify() != True and compteur<3) :
+while (myGrid.verify() != True and compteur<50) :
     compteur+=1
     for k in range (9) :
         for i in range (9) :
             myGrid.searchForTwoOutOfThree()
-            someTile = myGrid.getTile(i,k)
+            someTile = myGrid.getTile(k,i)
             someTile.evaluate()
+            if compteur > 1 :
+                someTile.narrowPossibilities()
 
-print(Grid(myGrid.grid - TEST_GRID))
 print(myGrid)
+print(compteur)
 
-for k in range (9) :
-    for i in range (9) :
-        someTile = myGrid.getTile(i,k)
-        someTile.checkIfTrivial()
-print(myGrid)
+# print(Grid(myGrid.grid - TEST_GRID))
