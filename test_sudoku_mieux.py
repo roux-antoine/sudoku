@@ -7,7 +7,7 @@ import copy
 ## REMARQUES
 #les indices x et y sont parfois inversés à cause de la convention mathématique (y puis x)
 #pour enlever les 0 au debut et fin : np.trim_zeros
-# il faut changer xIndex et yIndex en hIndex et vIndex...
+# il faudrait changer xIndex et yIndex en hIndex et vIndex...
 
 
 class Grid (object) :
@@ -121,22 +121,38 @@ class Grid (object) :
                     blockStudied = myGrid.getBlock(k, blockToStudy)
                     tilesStudied = blockStudied.block[:, columnToStudy%3]
 
-                    #Now we check if 2 out of 3 tiles are filled
-                    #if it is the case we can fill the last one
                     if (np.count_nonzero(tilesStudied) == 2) :
+                        #we check if 2 out of 3 tiles are filled
+                        #if it is the case we can fill the last one
                         indicesNotZero = np.array(np.nonzero(tilesStudied))
                         if (0 not in indicesNotZero) :
-                            tileToModify = myGrid.getTile(3*blockToStudy,columnToStudy)
-                            #myGrid.grid[3*blockToStudy,columnToStudy] = i
+                            tileToModify = myGrid.getTile(3*blockToStudy, columnToStudy)
                         elif (1 not in indicesNotZero) :
-                            tileToModify = myGrid.getTile(3*blockToStudy+1,columnToStudy)
-                            #myGrid.grid[3*blockToStudy+1,columnToStudy] = i
+                            tileToModify = myGrid.getTile(3*blockToStudy+1, columnToStudy)
                         else :
-                            tileToModify = myGrid.getTile(3*blockToStudy+2,columnToStudy)
-                            #myGrid.grid[3*blockToStudy+2,columnToStudy] = i
+                            tileToModify = myGrid.getTile(3*blockToStudy+2, columnToStudy)
                         tileToModify.modifyValue(i)
-                #il reste encore à gérer le cas où les deux autres tuiles ont encore plusieurs possibilités mais qu'on peut quand même conclure
 
+                    # else :
+                    #     #we have to check if there is only one possibility for the number, considering the tempGrid
+                    #     threeTilesPossibilities = np.array(myGrid.tempGrid[3*blockToStudy:3*blockToStudy+3, columnToStudy])
+                    #     threeTilesPossibilities = np.reshape(threeTilesPossibilities, (1,27))
+                    #     threeTilesPossibilities = np.sort(threeTilesPossibilities[0])
+                    #     threeTilesPossibilities = np.trim_zeros(threeTilesPossibilities)
+                    #     #if one of the possibilities only appears one, we know we can put it
+                    #     singles = [x for x in list(threeTilesPossibilities) if list(threeTilesPossibilities).count(x) == 1]
+                    #
+                    #     #now we have to check if the singles are part of this tile's possibilities
+                    #     if i in singles :
+                    #         #if there is only one possibility for the number
+                    #         #we have to find its position and modify the tile's value
+                    #         if i in myGrid.tempGrid[3*blockToStudy, columnToStudy] :
+                    #             tileToModify = myGrid.getTile(3*blockToStudy, columnToStudy)
+                    #         elif i in myGrid.tempGrid[3*blockToStudy+1, columnToStudy] :
+                    #             tileToModify = myGrid.getTile(3*blockToStudy+1, columnToStudy)
+                    #         else :
+                    #             tileToModify = myGrid.getTile(3*blockToStudy+2, columnToStudy)
+                    #         tileToModify.modifyValue(i)
         #horizontally
         for k in range (3) :
             #one for each group of 3 lines
@@ -181,15 +197,32 @@ class Grid (object) :
                         indicesNotZero = np.array(np.nonzero(tilesStudied))
                         if (0 not in indicesNotZero) :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy)
-                            #myGrid.grid[lineToStudy, 3*blockToStudy] = i
                         elif (1 not in indicesNotZero) :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+1)
-                            #myGrid.grid[lineToStudy, 3*blockToStudy+1] = i
                         else :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
-                            #myGrid.grid[lineToStudy, 3*blockToStudy+2] = i
                         tileToModify.modifyValue(i)
-                #il reste encore à gérer le cas où les deux autres tuiles ont encore plusieurs possibilités mais qu'on peut quand même conclure
+
+                    # else :
+                    #     #we have to check if there is only one possibility for the number, considering the tempGrid
+                    #     threeTilesPossibilities = np.array(myGrid.tempGrid[lineToStudy, 3*blockToStudy:3*blockToStudy+3])
+                    #     threeTilesPossibilities = np.reshape(threeTilesPossibilities, (1,27))
+                    #     threeTilesPossibilities = np.sort(threeTilesPossibilities[0])
+                    #     threeTilesPossibilities = np.trim_zeros(threeTilesPossibilities)
+                    #     #if one of the possibilities only appears one, we know we can put it
+                    #     singles = [x for x in list(threeTilesPossibilities) if list(threeTilesPossibilities).count(x) == 1]
+                    #
+                    #     #now we have to check if the singles are part of this tile's possibilities
+                    #     if i in singles :
+                    #         #if there is only one possibility for the number
+                    #         #we have to find its position and modify the tile's value
+                    #         if i in myGrid.tempGrid[lineToStudy, 3*blockToStudy] :
+                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy)
+                    #         elif i in myGrid.tempGrid[lineToStudy, 3*blockToStudy+1] :
+                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+1)
+                    #         else :
+                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
+                    #         tileToModify.modifyValue(i)
 
 class Block (object) :
 
@@ -467,7 +500,7 @@ TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
                         [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
 
-TEST_GRID = TEST_GRID_3
+TEST_GRID = TEST_GRID_2
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 print(Grid(TEST_GRID))
