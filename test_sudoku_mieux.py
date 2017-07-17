@@ -3,11 +3,13 @@
 import numpy as np
 import random
 import copy
+import time
 
 ## REMARQUES
 #les indices x et y sont parfois inversés à cause de la convention mathématique (y puis x)
 #pour enlever les 0 au debut et fin : np.trim_zeros
 # il faudrait changer xIndex et yIndex en hIndex et vIndex...
+#en fait il faut bien faire l'amélioration de 2outOf3 :/
 
 
 class Grid (object) :
@@ -28,6 +30,10 @@ class Grid (object) :
         self.neighborsNbrGrid = np.zeros((9,9))
 
         self.visitsNbrGrid = np.zeros((9,9))
+
+        self.numberOfEvaluations = 0
+
+        self.allTilesHaveBeenVisited = False
 
     def __str__ (self) :
         string = ""
@@ -61,12 +67,14 @@ class Grid (object) :
         string += " -----------------------"
         return string
 
-    def initNeighborsNbrGrid (self) :
+    def updateNeighborsNbrGrid (self) :
         for k in range (9) :
             for i in range (9) :
                 someTile = self.getTile(k,i)
-                self.neighborsNbrGrid[k,i] = len(someTile.getNeighbors())
-
+                if someTile.value != 0 :
+                    self.neighborsNbrGrid[k,i] = len(someTile.getNeighbors())
+                else :
+                    self.neighborsNbrGrid[k,i] = 0
     def verify(self) :
         """ Verifies that finished grid is correct
             by checking that all sums of blocks, lines and columns equal 45
@@ -103,11 +111,38 @@ class Grid (object) :
     def getTile (self, xIndex, yIndex) :
         return Tile(self.grid[xIndex, yIndex], xIndex, yIndex)
 
+    def findMostPromising (self) :
+        """ Orders the tiles by descending number of neighbors
+            Returns an array of size 81x2
+        """
+        arrayOfNeighbors = self.neighborsNbrGrid.flatten()
+        orderedTiles = []
+        mostPromising = np.zeros((2,81))
+        for k in range (8,-1,-1) :
+            orderedTiles += [i for i, j in enumerate(arrayOfNeighbors) if j == k]
+        for i, k in enumerate(orderedTiles) :
+            mostPromising[0,i] = k//9
+            mostPromising[1,i] = k%9
+        return(mostPromising)
+
+    def checkIfAllTilesHaveBeenVisited (self) :
+        """ Returns True if all tiles have been evaluated at least once, False otherwise
+        """
+        for k in range (9) :
+            for i in range (9) :
+                if myGrid.getTile(k,i).value == 0 :
+                    if myGrid.visitsNbrGrid[k,i] == 0 :
+                        return False
+        myGrid.allTilesHaveBeenVisited = True
+        return True
+
     def searchForTwoOutOfThree (self) :
         """
         Searches for lines/columns of blocks in which we know 2 identical numbers
         If found, we put the number in the only case it can fit
         """
+
+        self.numberOfEvaluations += 1
         #vertically
         for k in range (3) :
             #one for each group of 3 columns
@@ -291,7 +326,8 @@ class Tile (object) :
         allNeighbors.append(myGrid.getColumn(self.yIndex).column)
         allNeighbors = np.array(allNeighbors).flatten()
         allNeighborsNoDuplicates = list(set(allNeighbors))
-        allNeighborsNoDuplicates.remove(0)
+        if 0 in allNeighborsNoDuplicates :
+            allNeighborsNoDuplicates.remove(0)
         return(allNeighborsNoDuplicates)
 
     def evaluate(self) :
@@ -303,6 +339,9 @@ class Tile (object) :
 
         if (self.value != 0) :
             return -1
+
+        myGrid.visitsNbrGrid[self.xIndex, self.yIndex] += 1
+        myGrid.numberOfEvaluations += 1
 
         #we first check if there is only one possibility in the tempGrid
         possibilitiesNonZero = np.trim_zeros(myGrid.tempGrid[self.xIndex, self.yIndex])
@@ -333,6 +372,7 @@ class Tile (object) :
         """ Once we found the value of a tile, we modify it
             We also modify the possible values of all of the neighbors of the tile
             Doesn't return anything
+            Launches a 2outOf3 research at the end
         """
 
         #we modify the value of the tile
@@ -340,6 +380,9 @@ class Tile (object) :
         #we remove the possibilities and leave only the real value
         myGrid.tempGrid[self.xIndex, self.yIndex, 0] = value
         myGrid.tempGrid[self.xIndex, self.yIndex, 1:9] = 0
+
+        #we modify the number of neighbors to 0
+        myGrid.neighborsNbrGrid[self.xIndex, self.yIndex] = 0
 
         #we modify the possible values of the neighbors : block
         xIndexBlock = self.yIndex//3
@@ -378,7 +421,9 @@ class Tile (object) :
                 possibleTileValues.append(0)
                 myGrid.tempGrid[k, self.yIndex] = np.array(possibleTileValues)
 
-        #and we lauch a 2outOf3 search :
+        myGrid.updateNeighborsNbrGrid()
+
+        #and we finally lauch a 2outOf3 search :
         myGrid.searchForTwoOutOfThree()
 
     def narrowPossibilities(self) :
@@ -482,7 +527,27 @@ TEST_GRID_2 = np.array([[  0,  0,  2,  0,  0,  0,  0,  0,  0],
                         [  7,  0,  0,  0,  8,  0,  5,  0,  0],
                         [  0,  0,  0,  0,  0,  0,  3,  0,  0]])
 
-TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
+TEST_GRID_3 = np.array([[  4,  5,  0,  0,  0,  2,  0,  9,  0],
+                        [  3,  0,  7,  4,  0,  0,  1,  0,  0],
+                        [  6,  2,  0,  0,  0,  0,  0,  0,  0],
+                        [  0,  0,  0,  0,  4,  0,  0,  7,  0],
+                        [  0,  6,  0,  9,  7,  0,  0,  8,  0],
+                        [  0,  1,  0,  0,  0,  0,  3,  0,  0],
+                        [  2,  0,  0,  1,  0,  8,  0,  0,  0],
+                        [  1,  0,  5,  0,  0,  0,  0,  0,  3],
+                        [  0,  0,  0,  2,  0,  9,  0,  0,  7]])
+
+TEST_GRID_4 = np.array([[  0,  0,  1,  5,  0,  0,  0,  0,  0],
+                        [  0,  8,  0,  0,  0,  3,  1,  4,  0],
+                        [  0,  4,  0,  0,  8,  0,  0,  0,  3],
+                        [  0,  7,  0,  0,  5,  0,  0,  0,  8],
+                        [  0,  0,  6,  9,  0,  8,  3,  0,  0],
+                        [  3,  0,  0,  0,  2,  0,  0,  5,  0],
+                        [  5,  0,  0,  0,  7,  0,  0,  1,  0],
+                        [  0,  2,  7,  0,  0,  0,  0,  9,  0],
+                        [  0,  0,  0,  0,  0,  4,  5,  0,  0]])
+
+TEST_GRID_5 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  3,  0,  0,  0,  0,  0,  0.],
                         [  0,  7,  0,  6,  9,  0,  2,  0,  0.],
                         [  0,  5,  0,  0,  0,  7,  0,  0,  0.],
@@ -492,28 +557,74 @@ TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
                         [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
 
-TEST_GRID = TEST_GRID_1
+TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
+                        [  0,  0,  0,  9,  0,  0,  0,  0,  2],
+                        [  8,  0,  0,  0,  0,  0,  3,  0,  0],
+                        [  7,  0,  0,  0,  0,  4,  0,  0,  0],
+                        [  0,  9,  0,  0,  0,  0,  0,  6,  0],
+                        [  0,  0,  0,  0,  3,  0,  0,  0,  0],
+                        [  3,  0,  7,  0,  0,  0,  4,  0,  0],
+                        [  0,  0,  0,  2,  0,  0,  0,  9,  0],
+                        [  1,  0,  0,  0,  0,  0,  0,  0,  0]])
+
+TEST_GRID = TEST_GRID_6
+METHOD = 2      #1 = smart, 2 = bourrin
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 print(Grid(TEST_GRID))
 
+startTime = time.time()
+if METHOD == 1 :
+    myGrid.updateNeighborsNbrGrid()
+    myGrid.searchForTwoOutOfThree()
 
-compteur = 0
-myGrid.initNeighborsNbrGrid()
-myGrid.searchForTwoOutOfThree()
-
-while (myGrid.verify() != True and compteur<0) :
-    compteur+=1
     for k in range (9) :
         for i in range (9) :
             someTile = myGrid.getTile(k,i)
             someTile.evaluate()
-            if compteur > 1 :
-                someTile.narrowPossibilities()
+    myGrid.searchForTwoOutOfThree()
 
-print(Grid(myGrid.neighborsNbrGrid))
+    while (myGrid.verify() != True and myGrid.numberOfEvaluations < 600) :
+        aTileChanged = False
+        mostPromising = myGrid.findMostPromising()
+        promisingCounter = 0
+        while not(aTileChanged) and (myGrid.verify() != True) and (promisingCounter < 81) :
+            xIndex = int(mostPromising[0,promisingCounter])
+            yIndex = int(mostPromising[1,promisingCounter])
+            averageVisitNumber = np.mean(myGrid.visitsNbrGrid)
 
+            if myGrid.visitsNbrGrid[xIndex, yIndex] > 3 * averageVisitNumber :
+                #useful to avoid visiting to often the same tile
+                #if the while-loop loops endlessly, rise the coefficient
+                promisingCounter += 1
+
+            else :
+                someTile = myGrid.getTile(xIndex, yIndex)
+
+                if (someTile.evaluate() == True):
+                    aTileChanged = True
+
+                else :
+                    if myGrid.allTilesHaveBeenVisited == True :
+                        someTile.narrowPossibilities()
+                    else :
+                        myGrid.checkIfAllTilesHaveBeenVisited()
+                    promisingCounter += 1
+
+if METHOD == 2 :
+    compteur = 0
+    while (myGrid.verify() != True and compteur<5) :
+        compteur+=1
+        for k in range (9) :
+            for i in range (9) :
+                someTile = myGrid.getTile(k,i)
+                someTile.evaluate()
+                if compteur > 1 :
+                    someTile.narrowPossibilities()
+
+endTime = time.time()
 print(myGrid)
-print("compteur =", compteur)
+print("Time elapsed :", round(endTime - startTime, 3)*1000, "ms")
+#print("numberOfEvaluations =", myGrid.numberOfEvaluations)
 
 # print(Grid(myGrid.grid - TEST_GRID))
