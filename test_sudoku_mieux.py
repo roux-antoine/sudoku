@@ -18,27 +18,54 @@ class Grid (object) :
             Because of python, the third dimension is of length 9 all the time
         """
         self.grid = grid
-        someGrid = np.zeros((9,9,9))
+
+        tempGrid = np.zeros((9,9,9))
         for k in range (9) :
             for i in range (9) :
-                someGrid[k,i,0] = grid[k,i]
-        self.tempGrid = someGrid
-        #self.tempGrid = grid[:,:,np.newaxis] #to make it a 3D array and not 2D
+                tempGrid[k,i,0] = grid[k,i]
+        self.tempGrid = tempGrid
+
+        self.neighborsNbrGrid = np.zeros((9,9))
+
+        self.visitsNbrGrid = np.zeros((9,9))
 
     def __str__ (self) :
         string = ""
+        # string += " -----------------------" + "\n"
+        # for k in range (9) :
+        #     for i in range (9) :
+        #         if (i==0) or (i == 3) or (i == 6):
+        #             string += "|" + " "
+        #         for l in range(9) :
+        #             string += str(int(self.tempGrid[k,i,l]))
+        #         string += " "
+        #     string += "|"
+        #     string += "\n"
+        #     if (k == 2) or (k==5) :
+        #         string += "|-----------------------|" + "\n"
+        # string += " -----------------------" + "\n"
+
         string += " -----------------------" + "\n"
         for k in range (9) :
             for i in range (9) :
                 if (i==0) or (i == 3) or (i == 6):
                     string += "|" + " "
-                string += str(int(self.grid[k,i])) + " "
+                if int(self.grid[k,i]) != 0 :
+                    string += str(int(self.grid[k,i])) + " "
+                else :
+                    string += "." + " "
             string += "|"
             string += "\n"
             if (k == 2) or (k==5) :
                 string += "|-----------------------|" + "\n"
-        string += " -----------------------" + "\n"
+        string += " -----------------------"
         return string
+
+    def initNeighborsNbrGrid (self) :
+        for k in range (9) :
+            for i in range (9) :
+                someTile = self.getTile(k,i)
+                self.neighborsNbrGrid[k,i] = len(someTile.getNeighbors())
 
     def verify(self) :
         """ Verifies that finished grid is correct
@@ -133,26 +160,6 @@ class Grid (object) :
                             tileToModify = myGrid.getTile(3*blockToStudy+2, columnToStudy)
                         tileToModify.modifyValue(i)
 
-                    # else :
-                    #     #we have to check if there is only one possibility for the number, considering the tempGrid
-                    #     threeTilesPossibilities = np.array(myGrid.tempGrid[3*blockToStudy:3*blockToStudy+3, columnToStudy])
-                    #     threeTilesPossibilities = np.reshape(threeTilesPossibilities, (1,27))
-                    #     threeTilesPossibilities = np.sort(threeTilesPossibilities[0])
-                    #     threeTilesPossibilities = np.trim_zeros(threeTilesPossibilities)
-                    #     #if one of the possibilities only appears one, we know we can put it
-                    #     singles = [x for x in list(threeTilesPossibilities) if list(threeTilesPossibilities).count(x) == 1]
-                    #
-                    #     #now we have to check if the singles are part of this tile's possibilities
-                    #     if i in singles :
-                    #         #if there is only one possibility for the number
-                    #         #we have to find its position and modify the tile's value
-                    #         if i in myGrid.tempGrid[3*blockToStudy, columnToStudy] :
-                    #             tileToModify = myGrid.getTile(3*blockToStudy, columnToStudy)
-                    #         elif i in myGrid.tempGrid[3*blockToStudy+1, columnToStudy] :
-                    #             tileToModify = myGrid.getTile(3*blockToStudy+1, columnToStudy)
-                    #         else :
-                    #             tileToModify = myGrid.getTile(3*blockToStudy+2, columnToStudy)
-                    #         tileToModify.modifyValue(i)
         #horizontally
         for k in range (3) :
             #one for each group of 3 lines
@@ -202,27 +209,6 @@ class Grid (object) :
                         else :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
                         tileToModify.modifyValue(i)
-
-                    # else :
-                    #     #we have to check if there is only one possibility for the number, considering the tempGrid
-                    #     threeTilesPossibilities = np.array(myGrid.tempGrid[lineToStudy, 3*blockToStudy:3*blockToStudy+3])
-                    #     threeTilesPossibilities = np.reshape(threeTilesPossibilities, (1,27))
-                    #     threeTilesPossibilities = np.sort(threeTilesPossibilities[0])
-                    #     threeTilesPossibilities = np.trim_zeros(threeTilesPossibilities)
-                    #     #if one of the possibilities only appears one, we know we can put it
-                    #     singles = [x for x in list(threeTilesPossibilities) if list(threeTilesPossibilities).count(x) == 1]
-                    #
-                    #     #now we have to check if the singles are part of this tile's possibilities
-                    #     if i in singles :
-                    #         #if there is only one possibility for the number
-                    #         #we have to find its position and modify the tile's value
-                    #         if i in myGrid.tempGrid[lineToStudy, 3*blockToStudy] :
-                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy)
-                    #         elif i in myGrid.tempGrid[lineToStudy, 3*blockToStudy+1] :
-                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+1)
-                    #         else :
-                    #             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
-                    #         tileToModify.modifyValue(i)
 
 class Block (object) :
 
@@ -314,6 +300,7 @@ class Tile (object) :
             If there are multiples choices, we put them in the tempGrid
             Returns : -1 if tile is not 0, True if tile has been modified
         """
+
         if (self.value != 0) :
             return -1
 
@@ -333,12 +320,14 @@ class Tile (object) :
                     self.modifyValue(k)
                     return True
 
-        else :
+        elif (len(neighbors) < 8) :
             #if there are multiple possibilities for the tile
             for k in range(1,10) :
                 if (k not in neighbors) and (k not in myGrid.tempGrid[self.xIndex, self.yIndex]) :
                     oldPossibilities = np.delete(myGrid.tempGrid[self.xIndex, self.yIndex], 8)
                     myGrid.tempGrid[self.xIndex, self.yIndex] = np.append(k, oldPossibilities)
+        else :
+            print("ERROR : 9 neighbors")
 
     def modifyValue (self, value) :
         """ Once we found the value of a tile, we modify it
@@ -388,6 +377,9 @@ class Tile (object) :
                 possibleTileValues.remove(value)
                 possibleTileValues.append(0)
                 myGrid.tempGrid[k, self.yIndex] = np.array(possibleTileValues)
+
+        #and we lauch a 2outOf3 search :
+        myGrid.searchForTwoOutOfThree()
 
     def narrowPossibilities(self) :
         """ Once ALL tiles have been evaluated, we can check if the possibilities for one number are only for one tile
@@ -500,23 +492,28 @@ TEST_GRID_3 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
                         [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
                         [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
 
-TEST_GRID = TEST_GRID_2
+TEST_GRID = TEST_GRID_1
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 print(Grid(TEST_GRID))
 
+
 compteur = 0
-while (myGrid.verify() != True and compteur<50) :
+myGrid.initNeighborsNbrGrid()
+myGrid.searchForTwoOutOfThree()
+
+while (myGrid.verify() != True and compteur<0) :
     compteur+=1
     for k in range (9) :
         for i in range (9) :
-            myGrid.searchForTwoOutOfThree()
             someTile = myGrid.getTile(k,i)
             someTile.evaluate()
             if compteur > 1 :
                 someTile.narrowPossibilities()
 
+print(Grid(myGrid.neighborsNbrGrid))
+
 print(myGrid)
-print(compteur)
+print("compteur =", compteur)
 
 # print(Grid(myGrid.grid - TEST_GRID))
