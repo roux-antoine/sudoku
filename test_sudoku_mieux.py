@@ -31,8 +31,6 @@ class Grid (object) :
 
         self.visitsNbrGrid = np.zeros((9,9))
 
-        self.numberOfEvaluations = 0
-
         self.allTilesHaveBeenVisited = False
 
     def __str__ (self) :
@@ -68,13 +66,16 @@ class Grid (object) :
         return string
 
     def updateNeighborsNbrGrid (self) :
+        """ très couteux pour le moment :/
+        """
         for k in range (9) :
             for i in range (9) :
                 someTile = self.getTile(k,i)
                 if someTile.value != 0 :
-                    self.neighborsNbrGrid[k,i] = len(someTile.getNeighbors())
-                else :
                     self.neighborsNbrGrid[k,i] = 0
+                else :
+                    self.neighborsNbrGrid[k,i] = len(someTile.getNeighbors())
+
     def verify(self) :
         """ Verifies that finished grid is correct
             by checking that all sums of blocks, lines and columns equal 45
@@ -142,7 +143,6 @@ class Grid (object) :
         If found, we put the number in the only case it can fit
         """
 
-        self.numberOfEvaluations += 1
         #vertically
         for k in range (3) :
             #one for each group of 3 columns
@@ -341,7 +341,6 @@ class Tile (object) :
             return -1
 
         myGrid.visitsNbrGrid[self.xIndex, self.yIndex] += 1
-        myGrid.numberOfEvaluations += 1
 
         #we first check if there is only one possibility in the tempGrid
         possibilitiesNonZero = np.trim_zeros(myGrid.tempGrid[self.xIndex, self.yIndex])
@@ -505,17 +504,17 @@ class Tile (object) :
             self.modifyValue(trivialityArray[2])
             return True
 
-###########################################
+###############################################################
 
-TEST_GRID_1 = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0.],
-                        [  8,  0,  1,  0,  0,  0,  9,  0,  3.],
-                        [  0,  0,  0,  6,  0,  3,  0,  0,  0.],
-                        [  0,  2,  0,  0,  5,  7,  4,  0,  6.],
-                        [  5,  0,  0,  4,  0,  6,  0,  0,  2.],
-                        [  7,  0,  4,  8,  3,  0,  0,  9,  0.],
-                        [  0,  0,  0,  5,  0,  1,  0,  0,  0.],
-                        [  0,  0,  8,  0,  0,  0,  7,  0,  1.],
-                        [  4,  0,  0,  0,  7,  0,  6,  3,  0.]])
+TEST_GRID_1 = np.array([[  0,  3,  2,  0,  8,  0,  0,  0,  0],
+                        [  8,  0,  1,  0,  0,  0,  9,  0,  3],
+                        [  0,  0,  0,  6,  0,  3,  0,  0,  0],
+                        [  0,  2,  0,  0,  5,  7,  4,  0,  6],
+                        [  5,  0,  0,  4,  0,  6,  0,  0,  2],
+                        [  7,  0,  4,  8,  3,  0,  0,  9,  0],
+                        [  0,  0,  0,  5,  0,  1,  0,  0,  0],
+                        [  0,  0,  8,  0,  0,  0,  7,  0,  1],
+                        [  4,  0,  0,  0,  7,  0,  6,  3,  0]])
 
 TEST_GRID_2 = np.array([[  0,  0,  2,  0,  0,  0,  0,  0,  0],
                         [  0,  0,  3,  0,  1,  0,  0,  0,  6],
@@ -544,18 +543,18 @@ TEST_GRID_4 = np.array([[  0,  0,  1,  5,  0,  0,  0,  0,  0],
                         [  0,  0,  6,  9,  0,  8,  3,  0,  0],
                         [  3,  0,  0,  0,  2,  0,  0,  5,  0],
                         [  5,  0,  0,  0,  7,  0,  0,  1,  0],
-                        [  0,  2,  7,  0,  0,  0,  0,  9,  0],
+                        [  0,  2,  7,  1,  0,  0,  0,  9,  0],
                         [  0,  0,  0,  0,  0,  4,  5,  0,  0]])
 
-TEST_GRID_5 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0.],
-                        [  0,  0,  3,  0,  0,  0,  0,  0,  0.],
-                        [  0,  7,  0,  6,  9,  0,  2,  0,  0.],
-                        [  0,  5,  0,  0,  0,  7,  0,  0,  0.],
-                        [  0,  0,  0,  0,  4,  5,  7,  0,  0.],
-                        [  0,  0,  0,  1,  0,  0,  0,  9,  0.],
-                        [  0,  0,  1,  0,  0,  0,  0,  0,  8.],
-                        [  0,  0,  8,  5,  0,  0,  0,  0,  0.],
-                        [  0,  9,  0,  0,  0,  0,  4,  3,  0.]])
+TEST_GRID_5 = np.array([[  8,  0,  0,  0,  0,  0,  0,  0,  0],
+                        [  0,  0,  3,  0,  0,  0,  0,  0,  0],
+                        [  0,  7,  0,  6,  9,  0,  2,  0,  0],
+                        [  0,  5,  0,  0,  0,  7,  0,  0,  0],
+                        [  0,  0,  0,  0,  4,  5,  7,  0,  0],
+                        [  0,  0,  0,  1,  0,  0,  0,  9,  0],
+                        [  0,  0,  1,  0,  0,  0,  0,  0,  8],
+                        [  0,  0,  8,  5,  0,  0,  0,  0,  0],
+                        [  0,  9,  0,  0,  0,  0,  4,  3,  0]])
 
 TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
                         [  0,  0,  0,  9,  0,  0,  0,  0,  2],
@@ -567,8 +566,10 @@ TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
                         [  0,  0,  0,  2,  0,  0,  0,  9,  0],
                         [  1,  0,  0,  0,  0,  0,  0,  0,  0]])
 
+###############################################################
+
 TEST_GRID = TEST_GRID_6
-METHOD = 2      #1 = smart, 2 = bourrin
+METHOD = 1      #1 = smart, 2 = bourrin
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 print(Grid(TEST_GRID))
@@ -584,16 +585,19 @@ if METHOD == 1 :
             someTile.evaluate()
     myGrid.searchForTwoOutOfThree()
 
-    while (myGrid.verify() != True and myGrid.numberOfEvaluations < 600) :
+    numberOfPassagesInLoop = 0
+
+    while (myGrid.verify() != True and myGrid.numberOfPassagesInLoop < 500) :
         aTileChanged = False
         mostPromising = myGrid.findMostPromising()
         promisingCounter = 0
         while not(aTileChanged) and (myGrid.verify() != True) and (promisingCounter < 81) :
+            numberOfPassagesInLoop += 1
             xIndex = int(mostPromising[0,promisingCounter])
             yIndex = int(mostPromising[1,promisingCounter])
             averageVisitNumber = np.mean(myGrid.visitsNbrGrid)
 
-            if myGrid.visitsNbrGrid[xIndex, yIndex] > 3 * averageVisitNumber :
+            if myGrid.visitsNbrGrid[xIndex, yIndex] > 10 * averageVisitNumber :
                 #useful to avoid visiting to often the same tile
                 #if the while-loop loops endlessly, rise the coefficient
                 promisingCounter += 1
@@ -611,6 +615,8 @@ if METHOD == 1 :
                         myGrid.checkIfAllTilesHaveBeenVisited()
                     promisingCounter += 1
 
+    print("numberOfPassagesInLoop :", numberOfPassagesInLoop)
+
 if METHOD == 2 :
     compteur = 0
     while (myGrid.verify() != True and compteur<5) :
@@ -625,6 +631,5 @@ if METHOD == 2 :
 endTime = time.time()
 print(myGrid)
 print("Time elapsed :", round(endTime - startTime, 3)*1000, "ms")
-#print("numberOfEvaluations =", myGrid.numberOfEvaluations)
 
 # print(Grid(myGrid.grid - TEST_GRID))
