@@ -245,18 +245,6 @@ class Grid (object) :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
                         tileToModify.modifyValue(i)
 
-    def checkToNarrowAllNeighbors (self) :
-        """ Launches the website method for all the blocks
-            Doesn't return anything
-            Works but doesn't help on the difficult grids
-            Slows down the easy grids
-        """
-        for k in range (3) :
-            for i in range (3) :
-                currentBlock = self.getBlock(k,i)
-                currentBlock.checkToNarrowNeighbors()
-
-
 class Block (object) :
 
     def __init__ (self, block, xIndex, yIndex) :
@@ -278,72 +266,6 @@ class Block (object) :
                     valueToPut = k
             return (True, positionOfZero, valueToPut)
         return (False, -1, -1)
-
-    def checkToNarrowNeighbors (self) :
-        """ Uses the technique seen on the website to narrow possibilities for the lines and columns nearby
-            For all unfound numbers, it checks if it is necessarly in the block (respectively to lines and columns)
-            Doesn't return anything
-        """
-        foundNumbers = np.trim_zeros(np.sort((self.block.flatten())))
-        unfoundNumbers = []
-        for k in range (1, 10):
-            if k not in foundNumbers :
-                unfoundNumbers.append(k)
-        unfoundNumbers = np.array(unfoundNumbers)
-
-        for k in unfoundNumbers :
-            #now we have to check if k can only be in a line or a columns
-            #ATTENTION : bordel entre la notation XY et la convention mathématique
-
-            possibilitiesInLine = [] #list of the lines numbers in which k is a possibility
-            possibilitiesInColumn = [] #list of the columns numbers in which k is a possibility
-
-            for i in range (3) :
-                for j in range (3) :
-                    currentTileX = 3*self.yIndex+i
-                    currentTileY = 3*self.xIndex+j
-
-                    currentPossibilities = myGrid.tempGrid[currentTileX, currentTileY]
-                    if k in currentPossibilities :
-                        if currentTileX not in possibilitiesInLine :
-                            possibilitiesInLine.append(currentTileX)
-                        if currentTileY not in possibilitiesInColumn :
-                            possibilitiesInColumn.append(currentTileY)
-
-            if len(possibilitiesInLine) == 1 : #it means this number has to be in this block, respectively to the line
-                #before modifying anything, we must verify if the number has been found in the neighbor blocks.
-                #   In that case, it is useless to proceed (ENCORE A FAIRE)
-
-                lineToStudyIndex = possibilitiesInLine[0]
-                for i in range(9) :
-                    if i not in [3*self.xIndex, 3*self.xIndex+1, 3*self.xIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
-                        currentTilePossibilities = myGrid.tempGrid[lineToStudyIndex, i]
-                        currentTileNewPossibilities = []
-                        #the problem is that we must keep the possibilities in order
-                        for j in currentTilePossibilities :
-                            if j != k :
-                                currentTileNewPossibilities.append(j)
-                        if len(currentTileNewPossibilities) == 8 :
-                            currentTileNewPossibilities.append(0)
-                        myGrid.tempGrid[lineToStudyIndex, i] = currentTileNewPossibilities
-
-
-            if len(possibilitiesInColumn) == 1 : #it means this number has to be in this block, respectively to the column
-                #before modifying anything, we must verify if the number has been found in the neighbor blocks.
-                #   In that case, it is useless to proceed (ENCORE A FAIRE)
-
-                columnToStudyIndex = possibilitiesInColumn[0]
-                for i in range(9) :
-                    if i not in [3*self.yIndex, 3*self.yIndex+1, 3*self.yIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
-                        currentTilePossibilities = myGrid.tempGrid[i, columnToStudyIndex]
-                        currentTileNewPossibilities = []
-                        #the problem is that we must keep the possibilities in order
-                        for j in currentTilePossibilities :
-                            if j != k :
-                                currentTileNewPossibilities.append(j)
-                        if len(currentTileNewPossibilities) == 8 :
-                            currentTileNewPossibilities.append(0)
-                        myGrid.tempGrid[i, columnToStudyIndex] = currentTileNewPossibilities
 
 class Line (object) :
 
@@ -643,7 +565,7 @@ TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
 
 ###############################################################
 
-TEST_GRID = TEST_GRID_1
+TEST_GRID = TEST_GRID_2
 METHOD = 1      #1 = smart, 2 = bourrin
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
@@ -655,9 +577,10 @@ if METHOD == 1 :
 
     # myGrid.initNeighborsNbrGrid()
     # print("Number of neighbors", sum(sum(myGrid.neighborsNbrGrid))) #it can be a good indicator of difficulty
-    # a 2-out-3-search doesnt speed the algorithm
-    # this first inital "naive" search helps in most cases
 
+    # a 2-out-3-search doesnt speed the algorithm
+
+    # this first inital "naive" search helps in most cases
     for k in range (9) :
         for i in range (9) :
             myGrid.getTile(k,i).evaluate()
@@ -668,7 +591,6 @@ if METHOD == 1 :
         aTileChanged = False
         mostPromising = myGrid.findMostPromising()
         promisingCounter = 0
-        #myGrid.checkToNarrowAllNeighbors() #works but slows everything
         while not(aTileChanged) and (myGrid.isFinished() != True) and (promisingCounter < 81) :
             numberOfPassagesInLoop += 1
             xIndex = int(mostPromising[0,promisingCounter])
@@ -706,31 +628,8 @@ if METHOD == 2 :
                 if compteur > 1 :
                     someTile.narrowPossibilities()
 
-if METHOD == 3 :
 
-    for k in range (9) :
-        for i in range (9) :
-            someTile = myGrid.getTile(k,i)
-            someTile.evaluate()
-    for k in range (9) :
-        for i in range (9) :
-            someTile = myGrid.getTile(k,i)
-            someTile.narrowPossibilities()
-
-    someBlock = myGrid.getBlock(0,1)
-    print(someBlock.block)
-    someBlock.checkToNarrowNeighbors()
 
 endTime = time.time()
 print(myGrid)
-
-toto = myGrid.tempGrid.sum()
-
-print(toto)
-
-
-
-
-
-
 print("Time elapsed :", round(endTime - startTime, 3)*1000, "ms")
