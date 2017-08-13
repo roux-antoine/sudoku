@@ -10,12 +10,15 @@ import time
 #pour enlever les 0 au debut et fin : np.trim_zeros
 # il faudrait changer xIndex et yIndex en hIndex et vIndex...
 #Reflechir à si il faut améliorer 2outOf3
-#implementer la methode du site avec le nombre qui ne peut etre que dans un bloc...
+#on dirait qu'il est aussi bon que moi...
 
 
 #pour accelerer :
 #modifier la fonction isFinished
 #modifier update ?
+
+#pour le rendre plus puissant :
+#regarder les techniques qui utilisent les blocs identiques
 
 
 
@@ -643,7 +646,7 @@ TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
 
 ###############################################################
 
-TEST_GRID = TEST_GRID_1
+TEST_GRID = TEST_GRID_6
 METHOD = 1      #1 = smart, 2 = bourrin
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
@@ -655,7 +658,8 @@ if METHOD == 1 :
 
     # myGrid.initNeighborsNbrGrid()
     # print("Number of neighbors", sum(sum(myGrid.neighborsNbrGrid))) #it can be a good indicator of difficulty
-    # a 2-out-3-search doesnt speed the algorithm
+
+    # a 2-out-3-search doesnt speed up the algorithm :( 
     # this first inital "naive" search helps in most cases
 
     for k in range (9) :
@@ -723,14 +727,4 @@ if METHOD == 3 :
 
 endTime = time.time()
 print(myGrid)
-
-toto = myGrid.tempGrid.sum()
-
-print(toto)
-
-
-
-
-
-
 print("Time elapsed :", round(endTime - startTime, 3)*1000, "ms")
