@@ -248,16 +248,21 @@ class Grid (object) :
                             tileToModify = myGrid.getTile(lineToStudy, 3*blockToStudy+2)
                         tileToModify.modifyValue(i)
 
-    def checkToNarrowAllNeighbors (self) :
+    def checkAllBlockRowInteraction (self) :
         """ Launches the website method for all the blocks
             Doesn't return anything
-            Works but doesn't help on the difficult grids
+            Works but doesn't help on the test difficult grids
             Slows down the easy grids
+
+            A AMELIORER : IL NE FAUT PAS LE FAIRE POUR LES BLOCKS REMPLIS ETC...
+
+
         """
         for k in range (3) :
             for i in range (3) :
                 currentBlock = self.getBlock(k,i)
-                currentBlock.checkToNarrowNeighbors()
+                currentBlock.checkOneBlockRowInteraction()
+
 
 
 class Block (object) :
@@ -282,7 +287,7 @@ class Block (object) :
             return (True, positionOfZero, valueToPut)
         return (False, -1, -1)
 
-    def checkToNarrowNeighbors (self) :
+    def checkOneBlockRowInteraction (self) :
         """ Uses the technique seen on the website to narrow possibilities for the lines and columns nearby
             For all unfound numbers, it checks if it is necessarly in the block (respectively to lines and columns)
             Doesn't return anything
@@ -646,8 +651,11 @@ TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
 
 ###############################################################
 
+#Initialisation
 TEST_GRID = TEST_GRID_6
 METHOD = 1      #1 = smart, 2 = bourrin
+
+###############################################################
 
 myGrid = Grid(copy.deepcopy(TEST_GRID))
 print(Grid(TEST_GRID))
@@ -659,7 +667,7 @@ if METHOD == 1 :
     # myGrid.initNeighborsNbrGrid()
     # print("Number of neighbors", sum(sum(myGrid.neighborsNbrGrid))) #it can be a good indicator of difficulty
 
-    # a 2-out-3-search doesnt speed up the algorithm :( 
+    # a 2-out-3-search doesnt speed up the algorithm :(
     # this first inital "naive" search helps in most cases
 
     for k in range (9) :
@@ -672,7 +680,7 @@ if METHOD == 1 :
         aTileChanged = False
         mostPromising = myGrid.findMostPromising()
         promisingCounter = 0
-        #myGrid.checkToNarrowAllNeighbors() #works but slows everything
+        #myGrid.checkAllBlockRowInteraction() #works but slows everything
         while not(aTileChanged) and (myGrid.isFinished() != True) and (promisingCounter < 81) :
             numberOfPassagesInLoop += 1
             xIndex = int(mostPromising[0,promisingCounter])
@@ -723,7 +731,7 @@ if METHOD == 3 :
 
     someBlock = myGrid.getBlock(0,1)
     print(someBlock.block)
-    someBlock.checkToNarrowNeighbors()
+    someBlock.checkOneBlockRowInteraction()
 
 endTime = time.time()
 print(myGrid)
