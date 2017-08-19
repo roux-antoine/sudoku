@@ -249,20 +249,222 @@ class Grid (object) :
                         tileToModify.modifyValue(i)
 
     def checkAllBlockRowInteraction (self) :
-        """ Launches the website method for all the blocks
+        """ Launches the website method (block - line/column interactions) for all the blocks
             Doesn't return anything
             Works but doesn't help on the test difficult grids
             Slows down the easy grids
 
             A AMELIORER : IL NE FAUT PAS LE FAIRE POUR LES BLOCKS REMPLIS ETC...
-
-
         """
         for k in range (3) :
             for i in range (3) :
-                currentBlock = self.getBlock(k,i)
-                currentBlock.checkOneBlockRowInteraction()
+                self.getBlock(k,i).checkOneBlockRowInteraction()
 
+    def checkAllBlockBlockInteraction (self) :
+            """ Launches the website method (block - block interactions) for all the blocks
+                Doesn't return anything
+                #Works but doesn't help on the test difficult grids
+                Slows down the easy grids
+
+                A AMELIORER : IL NE FAUT PAS LE FAIRE POUR LES BLOCKS REMPLIS ETC...
+            """
+
+            #let's start horizontally
+            #reminder : we have to check all the 2-out-of-3 blocks combinaisons :/
+            for lineNbr in range (3):
+                for forgottenBlock in range (3) :
+
+                    firstLinePossibilities = list(myGrid.tempGrid[3*lineNbr, :])
+                    secondLinePossibilities = list(myGrid.tempGrid[3*lineNbr+1, :])
+                    thirdLinePossibilities = list(myGrid.tempGrid[3*lineNbr+2, :])
+
+                    firstLinePossibilitiesTrucated = copy.deepcopy(firstLinePossibilities)
+                    del firstLinePossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    firstLinePossibilitiesTrucated = np.trim_zeros(np.sort(np.array(firstLinePossibilitiesTrucated).flatten()))
+                    secondLinePossibilitiesTrucated = copy.deepcopy(secondLinePossibilities)
+                    del secondLinePossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    secondLinePossibilitiesTrucated = np.trim_zeros(np.sort(np.array(secondLinePossibilitiesTrucated).flatten()))
+                    thirdLinePossibilitiesTrucated = copy.deepcopy(thirdLinePossibilities)
+                    del thirdLinePossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    thirdLinePossibilitiesTrucated = np.trim_zeros(np.sort(np.array(thirdLinePossibilitiesTrucated).flatten()))
+
+                    foundNumbers = np.trim_zeros(np.sort((myGrid.grid[3*lineNbr:3*lineNbr+3, :].flatten())))
+                    unfoundNumbers = []
+                    for nbr in range (1, 10):
+                        if nbr not in foundNumbers :
+                            unfoundNumbers.append(nbr)
+                    unfoundNumbers = np.array(unfoundNumbers)
+
+                    #now we have to check if each unfound number can only be in 2-out-of-3 truncated lines
+                    for k in unfoundNumbers :
+                        possibilityArray = np.array([k in firstLinePossibilitiesTrucated, k in secondLinePossibilitiesTrucated, k in thirdLinePossibilitiesTrucated])
+                        if np.sum(possibilityArray) == 2 :
+                            #if k is only in 2-out-of-3 truncated lines, we have to remove the possibilities in the lines of the forgotten block
+                            linesToModify = []
+                            for i in range (3) :
+                                if possibilityArray[i] :
+                                    linesToModify.append(3*lineNbr+i)
+
+                            # print('lineNbr =', lineNbr, 'forgottenBlock =', forgottenBlock)
+                            # print(k)
+                            # print(linesToModify)
+                            # print('\n')
+
+                            for i in range (forgottenBlock*3, forgottenBlock*3+3) :
+                                #For the first line to modify :
+                                currentTilePossibilities = myGrid.tempGrid[linesToModify[0], i]
+                                currentTileNewPossibilities = [] #the problem is that we must keep the possibilities in order
+                                for j in currentTilePossibilities :
+                                    if j != k :
+                                        currentTileNewPossibilities.append(j)
+                                if len(currentTileNewPossibilities) == 8 :
+                                    currentTileNewPossibilities.append(0)
+                                myGrid.tempGrid[linesToModify[0], i] = currentTileNewPossibilities
+
+                                #For the second line to modify :
+                                currentTilePossibilities = myGrid.tempGrid[linesToModify[1], i]
+                                currentTileNewPossibilities = [] #the problem is that we must keep the possibilities in order
+                                for j in currentTilePossibilities :
+                                    if j != k :
+                                        currentTileNewPossibilities.append(j)
+                                if len(currentTileNewPossibilities) == 8 :
+                                    currentTileNewPossibilities.append(0)
+                                myGrid.tempGrid[linesToModify[1], i] = currentTileNewPossibilities
+
+            #and now vertically
+            #reminder : we have to check all the 2-out-of-3 blocks combinaisons :/
+            for columnNbr in range (3):
+                for forgottenBlock in range (3) :
+
+                    firstColumnPossibilities = list(myGrid.tempGrid[:, 3*columnNbr])
+                    secondColumnPossibilities = list(myGrid.tempGrid[:, 3*columnNbr+1])
+                    thirdColumnPossibilities = list(myGrid.tempGrid[:, 3*columnNbr+2])
+
+                    firstColumnPossibilitiesTrucated = copy.deepcopy(firstColumnPossibilities)
+                    del firstColumnPossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    firstColumnPossibilitiesTrucated = np.trim_zeros(np.sort(np.array(firstColumnPossibilitiesTrucated).flatten()))
+                    secondColumnPossibilitiesTrucated = copy.deepcopy(secondColumnPossibilities)
+                    del secondColumnPossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    secondColumnPossibilitiesTrucated = np.trim_zeros(np.sort(np.array(secondColumnPossibilitiesTrucated).flatten()))
+                    thirdColumnPossibilitiesTrucated = copy.deepcopy(thirdColumnPossibilities)
+                    del thirdColumnPossibilitiesTrucated[forgottenBlock*3 : forgottenBlock*3+3]
+                    thirdColumnPossibilitiesTrucated = np.trim_zeros(np.sort(np.array(thirdColumnPossibilitiesTrucated).flatten()))
+
+                    foundNumbers = np.trim_zeros(np.sort((myGrid.grid[:, 3*columnNbr : 3*columnNbr+3].flatten())))
+                    unfoundNumbers = []
+                    for nbr in range (1, 10):
+                        if nbr not in foundNumbers :
+                            unfoundNumbers.append(nbr)
+                    unfoundNumbers = np.array(unfoundNumbers)
+
+                    #now we have to check if each unfound number can only be in 2-out-of-3 truncated columns
+                    for k in unfoundNumbers :
+                        possibilityArray = np.array([k in firstColumnPossibilitiesTrucated, k in secondColumnPossibilitiesTrucated, k in thirdColumnPossibilitiesTrucated])
+                        if np.sum(possibilityArray) == 2 :
+                            #if k is only in 2-out-of-3 truncated columns, we have to remove the possibilities in the columns of the forgotten block
+                            columnsToModify = []
+                            for i in range (3) :
+                                if possibilityArray[i] :
+                                    columnsToModify.append(3*columnNbr+i)
+
+                            # print('columnNbr =', columnNbr, 'forgottenBlock =', forgottenBlock)
+                            # print(k)
+                            # print(columnsToModify)
+                            # print('\n')
+
+                            for i in range (forgottenBlock*3, forgottenBlock*3+3) :
+
+                                #For the first column to modify :
+                                currentTilePossibilities = myGrid.tempGrid[i, columnsToModify[0]]
+                                currentTileNewPossibilities = [] #the problem is that we must keep the possibilities in order
+                                for j in currentTilePossibilities :
+                                    if j != k :
+                                        currentTileNewPossibilities.append(j)
+                                if len(currentTileNewPossibilities) == 8 :
+                                    currentTileNewPossibilities.append(0)
+                                myGrid.tempGrid[i, columnsToModify[0]] = currentTileNewPossibilities
+
+                                # print(myGrid.tempGrid[i, columnsToModify[1]])
+
+                                #For the second column to modify :
+                                currentTilePossibilities = myGrid.tempGrid[i, columnsToModify[1]]
+                                currentTileNewPossibilities = [] #the problem is that we must keep the possibilities in order
+                                for j in currentTilePossibilities :
+                                    if j != k :
+                                        currentTileNewPossibilities.append(j)
+                                if len(currentTileNewPossibilities) == 8 :
+                                    currentTileNewPossibilities.append(0)
+                                myGrid.tempGrid[i, columnsToModify[1]] = currentTileNewPossibilities
+
+                                # print(myGrid.tempGrid[i, columnsToModify[1]])
+                                # print("--")
+
+
+###########################################@
+
+                # foundNumbers = np.trim_zeros(np.sort((self.block.flatten())))
+                # unfoundNumbers = []
+                # for k in range (1, 10):
+                #     if k not in foundNumbers :
+                #         unfoundNumbers.append(k)
+                # unfoundNumbers = np.array(unfoundNumbers)
+                #
+                # for k in unfoundNumbers :
+                #     #now we have to check if k can only be in two lines or columns, for two of the three aligned blocks
+                #     #ATTENTION : bordel entre la notation XY et la convention mathématique
+                #
+                #     possibilitiesInLine = [] #list of the lines numbers in which k is a possibility
+                #     possibilitiesInColumn = [] #list of the columns numbers in which k is a possibility
+                #
+                #     for i in range (3) :
+                #         for j in range (3) :
+                #             currentTileX = 3*self.yIndex+i
+                #             currentTileY = 3*self.xIndex+j
+                #
+                #             currentPossibilities = myGrid.tempGrid[currentTileX, currentTileY]
+                #             if k in currentPossibilities :
+                #                 if currentTileX not in possibilitiesInLine :
+                #                     possibilitiesInLine.append(currentTileX)
+                #                 if currentTileY not in possibilitiesInColumn :
+                #                     possibilitiesInColumn.append(currentTileY)
+                #
+                #     if len(possibilitiesInLine) == 2 : #it means this number can't be in the remaining line in the 2 other blocks
+                #         #before modifying anything, we must verify if the number has been found in the neighbor blocks.
+                #         #   In that case, it is useless to proceed (ENCORE A FAIRE)
+                #
+                #         for i in range (3) :
+                #             if i not in possibilitiesInLine :
+                #                 lineToStudyIndex = i
+                #
+                #         # for i in range(9) :
+                #         #     if i not in [3*self.xIndex, 3*self.xIndex+1, 3*self.xIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
+                #         #         currentTilePossibilities = myGrid.tempGrid[lineToStudyIndex, i]
+                #         #         currentTileNewPossibilities = []
+                #         #         #the problem is that we must keep the possibilities in order
+                #         #         for j in currentTilePossibilities :
+                #         #             if j != k :
+                #         #                 currentTileNewPossibilities.append(j)
+                #         #         if len(currentTileNewPossibilities) == 8 :
+                #         #             currentTileNewPossibilities.append(0)
+                #         #         myGrid.tempGrid[lineToStudyIndex, i] = currentTileNewPossibilities
+                #
+                #
+                #     if len(possibilitiesInColumn) == 2 : #it means this number can't be in the remaining column in the 2 other blocks
+                #         #before modifying anything, we must verify if the number has been found in the neighbor blocks.
+                #         #   In that case, it is useless to proceed (ENCORE A FAIRE)
+                #
+                #         # columnToStudyIndex = possibilitiesInColumn[0]
+                #         # for i in range(9) :
+                #         #     if i not in [3*self.yIndex, 3*self.yIndex+1, 3*self.yIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
+                #         #         currentTilePossibilities = myGrid.tempGrid[i, columnToStudyIndex]
+                #         #         currentTileNewPossibilities = []
+                #         #         #the problem is that we must keep the possibilities in order
+                #         #         for j in currentTilePossibilities :
+                #         #             if j != k :
+                #         #                 currentTileNewPossibilities.append(j)
+                #         #         if len(currentTileNewPossibilities) == 8 :
+                #         #             currentTileNewPossibilities.append(0)
+                #         #         myGrid.tempGrid[i, columnToStudyIndex] = currentTileNewPossibilities
 
 
 class Block (object) :
@@ -288,7 +490,7 @@ class Block (object) :
         return (False, -1, -1)
 
     def checkOneBlockRowInteraction (self) :
-        """ Uses the technique seen on the website to narrow possibilities for the lines and columns nearby
+        """ Uses the technique seen on the website (block - line/column interactions) to narrow possibilities for the lines and columns nearby
             For all unfound numbers, it checks if it is necessarly in the block (respectively to lines and columns)
             Doesn't return anything
         """
@@ -352,6 +554,75 @@ class Block (object) :
                         if len(currentTileNewPossibilities) == 8 :
                             currentTileNewPossibilities.append(0)
                         myGrid.tempGrid[i, columnToStudyIndex] = currentTileNewPossibilities
+
+    # def checkOneBlockBlockInteraction (self) :
+    #     """ Uses the technique seen on the website (block - line/column interactions) to narrow possibilities for the lines and columns nearby
+    #         For all unfound numbers, it checks if it is necessarly in the block (respectively to lines and columns)
+    #         Doesn't return anything
+    #     """
+    #     foundNumbers = np.trim_zeros(np.sort((self.block.flatten())))
+    #     unfoundNumbers = []
+    #     for k in range (1, 10):
+    #         if k not in foundNumbers :
+    #             unfoundNumbers.append(k)
+    #     unfoundNumbers = np.array(unfoundNumbers)
+    #
+    #     for k in unfoundNumbers :
+    #         #now we have to check if k can only be in two lines or columns, for two of the three aligned blocks
+    #         #ATTENTION : bordel entre la notation XY et la convention mathématique
+    #
+    #         possibilitiesInLine = [] #list of the lines numbers in which k is a possibility
+    #         possibilitiesInColumn = [] #list of the columns numbers in which k is a possibility
+    #
+    #         for i in range (3) :
+    #             for j in range (3) :
+    #                 currentTileX = 3*self.yIndex+i
+    #                 currentTileY = 3*self.xIndex+j
+    #
+    #                 currentPossibilities = myGrid.tempGrid[currentTileX, currentTileY]
+    #                 if k in currentPossibilities :
+    #                     if currentTileX not in possibilitiesInLine :
+    #                         possibilitiesInLine.append(currentTileX)
+    #                     if currentTileY not in possibilitiesInColumn :
+    #                         possibilitiesInColumn.append(currentTileY)
+    #
+    #         if len(possibilitiesInLine) == 2 : #it means this number can't be in the remaining line in the 2 other blocks
+    #             #before modifying anything, we must verify if the number has been found in the neighbor blocks.
+    #             #   In that case, it is useless to proceed (ENCORE A FAIRE)
+    #
+    #             for i in range (3) :
+    #                 if i not in possibilitiesInLine :
+    #                     lineToStudyIndex = i
+    #
+    #             # for i in range(9) :
+    #             #     if i not in [3*self.xIndex, 3*self.xIndex+1, 3*self.xIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
+    #             #         currentTilePossibilities = myGrid.tempGrid[lineToStudyIndex, i]
+    #             #         currentTileNewPossibilities = []
+    #             #         #the problem is that we must keep the possibilities in order
+    #             #         for j in currentTilePossibilities :
+    #             #             if j != k :
+    #             #                 currentTileNewPossibilities.append(j)
+    #             #         if len(currentTileNewPossibilities) == 8 :
+    #             #             currentTileNewPossibilities.append(0)
+    #             #         myGrid.tempGrid[lineToStudyIndex, i] = currentTileNewPossibilities
+    #
+    #
+    #         if len(possibilitiesInColumn) == 2 : #it means this number can't be in the remaining column in the 2 other blocks
+    #             #before modifying anything, we must verify if the number has been found in the neighbor blocks.
+    #             #   In that case, it is useless to proceed (ENCORE A FAIRE)
+    #
+    #             # columnToStudyIndex = possibilitiesInColumn[0]
+    #             # for i in range(9) :
+    #             #     if i not in [3*self.yIndex, 3*self.yIndex+1, 3*self.yIndex+2] : #in that case we're not in the block, so we must remove k from tempGrid
+    #             #         currentTilePossibilities = myGrid.tempGrid[i, columnToStudyIndex]
+    #             #         currentTileNewPossibilities = []
+    #             #         #the problem is that we must keep the possibilities in order
+    #             #         for j in currentTilePossibilities :
+    #             #             if j != k :
+    #             #                 currentTileNewPossibilities.append(j)
+    #             #         if len(currentTileNewPossibilities) == 8 :
+    #             #             currentTileNewPossibilities.append(0)
+    #             #         myGrid.tempGrid[i, columnToStudyIndex] = currentTileNewPossibilities
 
 class Line (object) :
 
@@ -653,7 +924,7 @@ TEST_GRID_6 = np.array([[  0,  5,  0,  6,  0,  0,  0,  0,  0],
 
 #Initialisation
 TEST_GRID = TEST_GRID_6
-METHOD = 1      #1 = smart, 2 = bourrin
+METHOD = 1      #1 = smart, 2 = bourrin, 3 = test
 
 ###############################################################
 
@@ -676,21 +947,26 @@ if METHOD == 1 :
 
     numberOfPassagesInLoop = 0
 
-    while (myGrid.isFinished() != True and numberOfPassagesInLoop < 500) :
+    while (myGrid.isFinished() != True and numberOfPassagesInLoop < 600) :
         aTileChanged = False
         mostPromising = myGrid.findMostPromising()
-        promisingCounter = 0
-        #myGrid.checkAllBlockRowInteraction() #works but slows everything
-        while not(aTileChanged) and (myGrid.isFinished() != True) and (promisingCounter < 81) :
+        promisingTileCounter = 0
+
+        if myGrid.allTilesHaveBeenVisited == True :
+            #myGrid.checkAllBlockRowInteraction() #works but slows a bit
+            #myGrid.checkAllBlockBlockInteraction() #doesnt work :/
+            pass
+
+        while not(aTileChanged) and (myGrid.isFinished() != True) and (promisingTileCounter < 81) :
             numberOfPassagesInLoop += 1
-            xIndex = int(mostPromising[0,promisingCounter])
-            yIndex = int(mostPromising[1,promisingCounter])
+            xIndex = int(mostPromising[0,promisingTileCounter])
+            yIndex = int(mostPromising[1,promisingTileCounter])
             averageVisitNumber = np.mean(myGrid.visitsNbrGrid)
 
             if myGrid.visitsNbrGrid[xIndex, yIndex] > 10 * averageVisitNumber :
                 #useful to avoid visiting to often the same tile
                 #if the while-loop loops endlessly, rise the coefficient
-                promisingCounter += 1
+                promisingTileCounter += 1
 
             else :
                 someTile = myGrid.getTile(xIndex, yIndex)
@@ -703,7 +979,17 @@ if METHOD == 1 :
                         someTile.narrowPossibilities()
                     else :
                         myGrid.checkIfAllTilesHaveBeenVisited()
-                    promisingCounter += 1
+                    promisingTileCounter += 1
+
+    numberOfPassagesInLoop = 0
+    while (myGrid.isFinished() != True and numberOfPassagesInLoop < 5) :
+        numberOfPassagesInLoop += 1
+        myGrid.checkAllBlockRowInteraction() #works but slows a bit (and is overwritten by evaluate)
+        myGrid.checkAllBlockBlockInteraction() #works but slows a bit (and is overwritten by evaluate)
+        for k in range (9) :
+            for i in range (9) :
+                myGrid.getTile(k,i).narrowPossibilities()
+
 
     print("numberOfPassagesInLoop :", numberOfPassagesInLoop)
 
@@ -729,9 +1015,10 @@ if METHOD == 3 :
             someTile = myGrid.getTile(k,i)
             someTile.narrowPossibilities()
 
-    someBlock = myGrid.getBlock(0,1)
-    print(someBlock.block)
-    someBlock.checkOneBlockRowInteraction()
+    myGrid.checkAllBlockBlockInteraction()
+
+print("Number of pos", sum(sum(sum(myGrid.tempGrid)))) #it can be a good indicator of difficulty
+
 
 endTime = time.time()
 print(myGrid)
